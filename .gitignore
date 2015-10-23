@@ -1,0 +1,4 @@
+# ignore pyc
+*.pyc
+# ignore generated html files,
+*.html
