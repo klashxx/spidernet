@@ -1,8 +1,14 @@
+#!/usr/bin/env python
+
+from datetime import datetime
 from twisted.internet import reactor
 import scrapy
+import re
+import locale
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from bs4 import BeautifulSoup
+
 
 class LotoItem(scrapy.Item):
     date = scrapy.Field()
@@ -10,11 +16,26 @@ class LotoItem(scrapy.Item):
     stars = scrapy.Field()
 
 class LotoSpider(scrapy.Spider):
+
     name = "Loto"
     allowed_domains = ["loteriasyapuestas.es"]
     start_urls = [
         'http://www.loteriasyapuestas.es/es/buscador?type=results'
     ]
+
+    @staticmethod
+    def get_lotto_date(lotto_date):
+
+        try:
+            lotto_date = re.search(r'\d+.*$', lotto_date).group()
+            try:
+                lotto_date = datetime.strptime(lotto_date, '%d de %B de %Y')
+            except ValueError:
+                pass
+        except AttributeError:
+            pass
+
+        return lotto_date      
 
     def parse(self, response):
 
@@ -31,13 +52,21 @@ class LotoSpider(scrapy.Spider):
             item = LotoItem()
             item['winner'] = res[:5]
             item['stars'] = res[5:]
-            item['date'] = soup.h3.string
+            item['date'] = self.get_lotto_date(soup.h3.string)
 
             yield item
 
-configure_logging({'LOG_FORMAT': '%(levelname)s: %(message)s'})
-runner = CrawlerRunner()
+def main():
+    locale.setlocale(locale.LC_TIME, 'es_ES')
 
-d = runner.crawl(LotoSpider)
-d.addBoth(lambda _: reactor.stop())
-reactor.run()
+    configure_logging({'LOG_FORMAT': '%(levelname)s: %(message)s'})
+    runner = CrawlerRunner()
+
+    d = runner.crawl(LotoSpider)
+    d.addBoth(lambda _: reactor.stop())
+    reactor.run()
+    return None
+
+
+if __name__ == "__main__":
+    main()
