@@ -35,17 +35,17 @@ class LotoSpider(scrapy.Spider):
         except AttributeError:
             pass
 
-        return lotto_date      
+        return lotto_date
 
     def parse(self, response):
 
-        #for sel in response.xpath('//div[contains(@class, "primitiva") '
-        #                          'or contains(@class, "euromi")]/div'):
-  
-        for sel in response.xpath('//div[contains(@class, "euromillon")]/div'):
+        for sel in response.xpath('//div[contains(@class, "euromillones") and '
+                                  'not(contains(@class, "resultadosGordo"))]'):
+
             soup = BeautifulSoup(sel.extract(), 'html.parser')
-            res = [int(num.string) for num in soup.find_all('li')]
-            
+            res = [int(num.string)
+                   for num in soup.find_all('li') if num.string is not None]
+
             if not res:
                 continue
 
